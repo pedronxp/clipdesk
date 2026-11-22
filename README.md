@@ -677,6 +677,8 @@ clipdesk/
 
 ## Documentação técnica
 
+- [`docs/COMO_E_FEITO_O_CORTE.md`](docs/COMO_E_FEITO_O_CORTE.md) — passo a passo didático do
+  corte, usando um clip real como exemplo (captura → spike → análise → IA → render).
 - [`docs/MOTOR_DE_CRIACAO.md`](docs/MOTOR_DE_CRIACAO.md) — pipeline completo, fase por fase,
   com critérios numéricos e artefatos.
 
