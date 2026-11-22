@@ -1,0 +1,26 @@
+.venv/
+.venv*/
+__pycache__/
+.pytest_cache/
+*.log
+.zcode/
+.superpowers/
+# frontend não versionado: apenas motor/backend sobe para o repositório
+dashboard/static/
+docs/DESIGN_SYSTEM.md
+docs/AUDITORIA_ACESSIBILIDADE.md
+# logs e artefatos internos de desenvolvimento
+logs/
+docs/superpowers/
+streams.json
+jobs/
+test/
+out/
+dashboard/logs/
+dashboard/state/
+log.md
+streams.md
+*.mp4
+*.wav
+*.ts
+!docs/*.mp4

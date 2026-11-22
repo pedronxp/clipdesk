@@ -1,0 +1,59 @@
+{
+ "default": "react-br",
+ "presets": {
+  "react-br": {
+   "layout": "react",
+   "cam": "auto",
+   "title_style": "box",
+   "title_secs": 0,
+   "captions": "word",
+   "lang": "pt",
+   "langs": "en",
+   "zoom": "face",
+   "thumb": true,
+   "voice": false,
+   "allow_profanity": false,
+   "cap_color": "#FFFFFF",
+   "cap_highlight": "#FFE500",
+   "cap_outline": "#000000",
+   "box_fill": "#FFFFFF",
+   "box_text": "#000000"
+  },
+  "original": {
+   "layout": "react",
+   "cam": "auto",
+   "title_style": "box",
+   "title_secs": 0,
+   "captions": "word",
+   "lang": "",
+   "langs": "",
+   "zoom": "off",
+   "thumb": true,
+   "voice": false,
+   "allow_profanity": false,
+   "cap_color": "#FFFFFF",
+   "cap_highlight": "#FFE500",
+   "cap_outline": "#000000",
+   "box_fill": "#FFFFFF",
+   "box_text": "#000000"
+  },
+  "blur-multi": {
+   "layout": "blur",
+   "cam": "auto",
+   "title_style": "box",
+   "title_secs": 0,
+   "captions": "word",
+   "lang": "pt",
+   "langs": "pt,en",
+   "zoom": "game",
+   "thumb": true,
+   "voice": false,
+   "allow_profanity": false,
+   "cap_color": "#FFFFFF",
+   "cap_highlight": "#FFE500",
+   "cap_outline": "#000000",
+   "box_fill": "#FFFFFF",
+   "box_text": "#000000"
+  }
+ }
+}
