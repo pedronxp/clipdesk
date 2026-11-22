@@ -606,11 +606,12 @@ def game_offset(video, s0, e0, src, cam_box, w=None, h=None):
     std = st.std(0); med = np.median(st, 0)
     edges = cv2.Canny(med.astype(np.uint8), 60, 160) > 0
     bad = (std < 6) & cv2.dilate(edges.astype(np.uint8), np.ones((9, 9), np.uint8)).astype(bool)
-    x, y, w, h = cam_box  # the cam itself also counts as overlay
-    bad[int(y * h):int((y + h) * h), int(x * gw):int((x + w) * gw)] = True
+    # cam_box is fractional [x, y, w, h]; keep w/h as the panel pixel size (defaults W/GAME_H).
+    cx, cy, cw, ch = cam_box  # the cam itself also counts as overlay
+    bad[int(cy * h):int((cy + ch) * h), int(cx * gw):int((cx + cw) * gw)] = True
     col = bad.sum(0).astype(np.float64); cs = np.concatenate([[0], np.cumsum(col)])
     best, bx = None, 0
-    camcols = np.zeros(gw); camcols[int(x * gw):int((x + w) * gw)] = 1; cc = np.concatenate([[0], np.cumsum(camcols)])
+    camcols = np.zeros(gw); camcols[int(cx * gw):int((cx + cw) * gw)] = 1; cc = np.concatenate([[0], np.cumsum(camcols)])
     for ox in range(0, gw - w + 1, 8):
         # never show the cam twice; otherwise stay near the centre (game subtitles and action sit there),
         # moving off-centre only when that clearly removes a static overlay (counters, alerts, chat)

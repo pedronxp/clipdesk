@@ -555,7 +555,49 @@ python scripts/pack.py jobs/spike-6-d040390e --pick 1 \
 
 ---
 
-## 10. Limites e avisos
+## 10. Por que o corte saiu em `blur` em vez de `react`?
+
+O arquivo continua **1080x1920**; o que muda é a composição. O pipeline tenta o layout
+`react` e, se o `cut.py` falhar, repete automaticamente com `blur` para não perder o momento:
+
+```
+react cut skipped (no facecam): retrying with the blur layout
+```
+
+No caso dos cortes do LipaoGamer, o `react` não falhou por falta de webcam. Ele quebrou com:
+
+```
+TypeError: 'float' object cannot be interpreted as an integer
+  File "scripts/cut.py", line 614, in game_offset
+    for ox in range(0, gw - w + 1, 8):
+```
+
+A causa: `game_offset()` recebia `cam_box` como frações `[x, y, w, h]`, mas reutilizava os
+nomes `w` e `h` — que já eram o tamanho do painel em pixels. O `range()` então recebia um
+float. Correção aplicada:
+
+```python
+cx, cy, cw, ch = cam_box          # frações
+# w/h continuam sendo o painel em pixels (W/GAME_H)
+```
+
+Como diagnosticar:
+
+1. Abra `dashboard/logs/create_<job>.log`.
+2. Procure por `react falhou; repetindo com blur` e leia o traceback acima.
+3. Rode o corte manualmente com `--layout react` para ver o erro completo.
+4. Se a webcam não for detectada, o log mostra `no streamer face over gameplay` — aí o
+   fallback `blur` é o comportamento correto.
+
+Para forçar o layout esperado:
+
+```bash
+python scripts/cut.py jobs/<id> --pick 1 --layout react --lang pt --captions sentence
+```
+
+---
+
+## 11. Limites e avisos
 
 - O corte é **manual para postar**: nada é publicado automaticamente.
 - A captura original pode ser apagada pela retenção de 24 h; o corte final é preservado.
