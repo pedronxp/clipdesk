@@ -35,6 +35,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import common  # noqa: E402
 import performance  # noqa: E402
 import spike_feedback  # noqa: E402
+import streams  # noqa: E402
 import voids  # noqa: E402
 from youtube_publish import YouTubePublisher  # noqa: E402
 try:
@@ -244,9 +245,7 @@ def load_watchlist():
 def save_watchlist(rows):
     STATE_DIR.mkdir(exist_ok=True)
     with WATCH_LOCK:
-        tmp = WATCHLIST.with_suffix(".tmp")
-        common.save_json(tmp, rows)
-        tmp.replace(WATCHLIST)
+        common.save_json(WATCHLIST, rows)  # save_json is atomic
 
 
 def child_env():
@@ -417,9 +416,7 @@ def pipeline_rows():
 def save_pipeline_rows(rows):
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     with PIPELINE_LOCK:
-        tmp = PIPELINE_QUEUE.with_suffix(".tmp")
-        common.save_json(tmp, rows)
-        tmp.replace(PIPELINE_QUEUE)
+        common.save_json(PIPELINE_QUEUE, rows)  # save_json is atomic
 
 
 def enqueue_pipeline(job, top, preset):
@@ -587,7 +584,10 @@ def retention_sweep(now=None):
         mon_path = jd / "monitor.json"
         if not mon_path.is_file():
             continue  # never processed: the watcher/pipeline owns it, voids own the empties
-        meta = common.load_json(mon_path) or {}
+        try:
+            meta = common.load_json(mon_path) or {}
+        except (OSError, ValueError):
+            meta = {}  # truncated/0-byte record (a crashed write): the segment mtimes decide
         ended = _iso_ts(meta.get("failed_ts")) or voids.ended_at(jd)
         if not ended or (now - ended) < RETENTION_H * 3600:
             continue
@@ -611,7 +611,10 @@ def void_pruner_tick():
             freed = voids.prune_voids(JOBS, grace_minutes=VOID_GRACE_MIN, running_ids=running)
         for row in freed:
             print(f"void descartada: {row['job']} ({row['mb']} MB liberados)", flush=True)
-        retention_sweep()
+        try:
+            retention_sweep()
+        except Exception as e:  # one broken job must not stop the watchlist cleanup
+            print(f"retenção: {e}", flush=True)
         alive = [r for r in rows if watch_running(r) or (JOBS / r["id"]).is_dir()]
         if len(alive) != len(rows):
             save_watchlist(alive)
@@ -1665,11 +1668,30 @@ def fetch_twitch(login):
 
 
 def fetch_viewers(url):
+    """Espectadores de uma live.
+
+    YouTube: o player exige login em parte dos IPs ("Sign in to confirm you're
+    not a bot"), então há duas reservas — a extração com cookies e a API
+    Innertube (a mesma fonte do "X assistindo" do site). Nenhuma das duas pode
+    derrubar o painel: no máximo o contador fica desconhecido.
+    """
     try:
         if "twitch.tv" in url:
             login = urlparse(url).path.strip("/").split("/")[0].lower()
             d = fetch_twitch(login)
             return (d or {}).get("viewers") if d else None
+        if "youtube.com" in url or "youtu.be" in url:
+            vid = streams.youtube_id(url)
+            info, _err = streams.probe_player(url, timeout=18)
+            if info and info.get("is_live"):
+                viewers = info.get("concurrent_view_count")
+                if viewers is not None:
+                    return viewers
+            if vid:
+                got = streams.innertube_live_viewers(vid, timeout=12)
+                if got is not None:
+                    return got
+            return 0 if info else None
         info = common.ytdlp_json(url)
         return info.get("concurrent_view_count") if info.get("is_live") else 0
     except Exception:

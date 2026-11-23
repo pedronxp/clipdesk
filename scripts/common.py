@@ -198,7 +198,17 @@ def ffprobe(path, at=None):
 
 
 def save_json(path, obj):
-    Path(path).write_text(json.dumps(obj, ensure_ascii=False, indent=1), encoding="utf-8")
+    """Atomic write: the dashboard watcher/pruner never reads a half-written file.
+
+    A plain write_text() truncates the target first, so a crash (or two writers racing on
+    the same monitor.json) leaves a 0-byte file behind and every later json.loads() blows
+    up with "Expecting value: line 1 column 1 (char 0)".
+    """
+    path = Path(path)
+    text = json.dumps(obj, ensure_ascii=False, indent=1)  # serialize BEFORE touching the file
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def load_json(path):

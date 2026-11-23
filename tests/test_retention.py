@@ -68,6 +68,16 @@ def test_failed_pipeline_also_swept(tmp_path, monkeypatch):
     assert not jd.exists()
 
 
+def test_truncated_monitor_json_does_not_crash_the_pruner(tmp_path, monkeypatch):
+    """A 0-byte monitor.json (crashed write) used to raise JSONDecodeError on every pruner
+    tick, so retention and the watchlist cleanup never ran."""
+    _redirect(tmp_path, monkeypatch)
+    jd = _capture(tmp_path, "job-corrupt", ended_h=25.0)
+    (jd / "monitor.json").write_text("", encoding="utf-8")
+    server.void_pruner_tick()
+    assert not jd.exists()
+
+
 def test_running_or_queued_capture_kept(tmp_path, monkeypatch):
     _redirect(tmp_path, monkeypatch)
     jd = _capture(tmp_path, "job-queued", ended_h=48.0)
